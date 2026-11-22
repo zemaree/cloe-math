@@ -20,8 +20,9 @@ button:disabled{opacity:.55;cursor:default}
 <section class="panel"><h2 style="margin:0 0 6px">Ciao Cloe!</h2><p class="muted" style="margin:0 0 18px">Piccoli allenamenti, grandi progressi. Oggi puntiamo alla precisione.</p>
 <div class="stats"><div class="stat"><strong id="points">0</strong><span>stelle</span></div><div class="stat"><strong id="accuracy">—</strong><span>precisione oggi</span></div><div class="stat"><strong id="streak">0</strong><span>di fila</span></div></div></section>
 <div class="layout"><section class="panel"><div style="display:flex;justify-content:space-between;align-items:center"><strong id="round">Allenamento · 1 di 10</strong><span class="pill" id="clock">00:00</span></div><div class="progress" style="margin-top:12px"><div id="bar"></div></div>
-<div class="question" id="question">7 × 8</div>
-<div class="interaction-dock">
+<div id="sessionIntro" style="text-align:center;padding:18px 8px"><h2 style="margin:0 0 8px">Pronta per allenarti?</h2><p class="muted">Una sessione di circa 15 minuti, con moltiplicazioni e divisioni da 1 a 10.</p><button class="primary" id="startExercises" type="button">Inizia esercizi</button></div>
+<div class="question hidden" id="question">7 × 8</div>
+<div class="interaction-dock hidden" id="interactionDock">
   <div class="answer"><input id="answer" inputmode="text" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="?" aria-label="Risposta"><button class="primary" id="send">Invia</button></div>
   <button class="secondary voice" id="speak">🎙️ Rispondi a voce</button><div class="feedback" id="feedback" aria-live="polite"></div>
   <div class="actions"><button class="secondary" id="skip">Non lo so</button><button class="secondary" id="next" disabled>Prossima</button></div><p class="muted small" id="voiceStatus" style="text-align:center;margin-bottom:0">Premi Rispondi a voce; se non funziona, usa il microfono della tastiera.</p>
