@@ -29,6 +29,49 @@ button:disabled{opacity:.55;cursor:default}
 </section><section class="panel"><h3 style="margin-top:0">Il tuo percorso</h3><p class="muted small">Le operazioni sbagliate tornano più spesso, così diventano familiari.</p><div class="stats"><div class="stat"><strong id="done">0/10</strong><span>risposte</span></div><div class="stat"><strong id="best">—</strong><span>tempo medio</span></div><div class="stat"><strong id="days">1</strong><span>giorno</span></div></div><h3>Ultime risposte</h3><div id="history" class="history muted small">Qui vedrai i tuoi progressi.</div></section></div>
 <section class="panel" id="dashboard"><h2 style="margin-top:0">Dashboard dei progressi</h2><p class="muted small">Riepilogo dei risultati, della costanza e delle operazioni che Cloe sta imparando.</p><div class="dashboard-grid"><div class="dash-card"><strong id="dashExercises">0</strong><span>Esercizi svolti</span></div><div class="dash-card"><strong id="dashAccuracy">—</strong><span>Precisione complessiva</span></div><div class="dash-card"><strong id="dashActiveDays">0</strong><span>Giorni di allenamento</span></div><div class="dash-card"><strong id="dashAverage">—</strong><span>Tempo medio risposta</span></div></div><div class="dash-section"><h3>Percorso di 15 giorni</h3><strong id="cycleDay">Giorno 1 di 15</strong><p class="muted small" id="cyclePhase">Precisione e familiarità con le tabelline.</p><div class="progress" style="margin:9px 0"><div id="cycleBar"></div></div><p class="muted small">Per tutto il primo ciclo restiamo su moltiplicazioni e divisioni con numeri da 1 a 10. Il programma non introduce argomenti nuovi automaticamente.</p></div><div class="dash-section"><h3>Livello e difficoltà</h3><div style="display:flex;justify-content:space-between;gap:10px"><strong id="dashLevel">Livello 1</strong><strong id="dashLevelProgress">0%</strong></div><div class="progress" style="margin:9px 0"><div id="dashLevelBar"></div></div><p class="muted small" id="dashDifficulty"></p><p class="muted small" id="dashNextLevel"></p></div><div class="dash-section"><h3>Attività degli ultimi 7 giorni</h3><div class="dash-bars" id="weeklyChart"></div></div><div class="dash-section"><h3>Padronanza delle operazioni</h3><p class="muted small">Precisione e numero di risposte determinano il livello. I dati già salvati restano conservati; i dettagli per singola operazione si raccolgono da questa versione.</p><div id="masteryList"></div></div></section><section class="panel"><h3 style="margin-top:0">Calendario degli allenamenti</h3><p class="muted small">Completa 10 esercizi in un giorno per ottenere il premio quotidiano.</p><div class="month-nav"><button class="secondary" id="prevMonth" type="button" aria-label="Mese precedente">‹</button><strong id="calendarMonth"></strong><button class="secondary" id="nextMonth" type="button" aria-label="Mese successivo">›</button></div><div class="calendar" id="calendarGrid"></div><p class="muted small" id="rewardInfo"></p></section>
 <div class="panel hidden" id="summary"><h2>Allenamento completato!</h2><p id="summaryText"></p><button class="primary" id="again">Fai un altro giro</button></div>
+
+<style>
+#cloudLogin{position:fixed;inset:0;z-index:200;background:linear-gradient(145deg,#5142b8,#8173e8);display:flex;align-items:center;justify-content:center;padding:20px}
+#cloudLogin .login-card{width:min(100%,410px);background:#fff;border-radius:24px;padding:28px;box-shadow:0 20px 60px #17152d55}
+#cloudLogin h1{margin:0;color:#5142b8;font-size:30px}
+#cloudLogin p{color:#77768b}
+#cloudLogin select,#cloudLogin input{display:block;width:100%;margin:12px 0;border:2px solid #dedbed;border-radius:13px;padding:14px;font:inherit;background:white}
+#cloudLogin button{width:100%;margin-top:8px}
+#cloudLogin .login-error{min-height:22px;color:#b93838;font-size:14px}
+#cloudLogin .login-note{font-size:12px;line-height:1.5}
+#cloudToolbar{display:none;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+#cloudToolbar button{padding:9px 12px;font-size:13px}
+#cloudMode{font-size:12px;color:#5142b8;font-weight:800}
+body.cloud-parent #layout .panel:first-child,body.cloud-parent #summary{display:none!important}
+body.cloud-parent #dashboard,body.cloud-parent #dashboard+section{display:block}
+body.cloud-parent #dashboard{margin-top:18px}
+body.cloud-parent #layout .panel:last-child{display:none!important}
+body.cloud-parent #dashboard+section{display:block}
+</style>
+<div id="cloudLogin">
+ <section class="login-card">
+  <h1>Cloe Math</h1>
+  <p>Chi sta usando l'app?</p>
+  <form id="cloudLoginForm">
+   <select id="cloudProfile" aria-label="Profilo">
+    <option value="cloe">Cloe</option>
+    <option value="parent">Genitore</option>
+    <option value="teacher">Docente</option>
+   </select>
+   <input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Password" required>
+   <button class="primary" id="cloudLoginButton" type="submit">Accedi</button>
+   <div class="login-error" id="cloudLoginError" aria-live="polite"></div>
+  </form>
+  <p class="login-note">I progressi di Cloe sono sincronizzati online. Genitore e Docente possono consultare i progressi e usare una modalità Prova separata.</p>
+ </section>
+</div>
+<div class="app" id="cloudToolbar">
+ <span id="cloudMode">Accesso attivo</span>
+ <button class="secondary" id="cloudRealMode" type="button">Progressi di Cloe</button>
+ <button class="secondary" id="cloudPracticeMode" type="button">Modalità Prova</button>
+ <button class="secondary" id="cloudLogout" type="button">Esci</button>
+</div>
+
 <div class="footer">Versione 1.4.0 · I progressi sono salvati su questo dispositivo. Nessun account necessario.</div>
 <div class="admin-backdrop hidden" id="adminPanel" role="dialog" aria-modal="true" aria-labelledby="adminTitle"><section class="admin-card"><button class="admin-close secondary" id="adminClose" type="button" aria-label="Chiudi">✕</button><h2 id="adminTitle">Amministrazione</h2><p class="muted small">Area riservata al genitore.</p><div id="adminLogin"><label for="adminPassword"><strong>Password</strong></label><input id="adminPassword" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Inserisci password"><p class="admin-error" id="adminError" aria-live="polite"></p><button class="primary" id="adminUnlock" type="button">Accedi</button></div><div id="adminTools" class="hidden"><p>Puoi cancellare i progressi e lo storico dei test salvati su questo dispositivo.</p><button class="danger" id="resetData" type="button">Reset database</button><p class="muted small">Il reset non modifica il codice, le impostazioni del browser o i dati di altri dispositivi.</p></div></section></div>
 </main><script>
@@ -143,4 +186,114 @@ if(SR){
  $('speak').onclick=()=>{if(!answered)$('answer').focus()};
 }
 const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};$('prevMonth').onclick=()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar()};$('nextMonth').onclick=()=>{let n=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1),now=new Date();if(n<=new Date(now.getFullYear(),now.getMonth(),1)){calendarMonth=n;renderCalendar()}};renderStats();renderHistory();renderCalendar();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=15',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
-</script></body></html>
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+(() => {
+ const firebaseConfig = {
+  apiKey: "AIzaSyDOOf7QSOj0E3N5jF06kHzpbje8F5fMrg0",
+  authDomain: "cloe-math.firebaseapp.com",
+  projectId: "cloe-math",
+  storageBucket: "cloe-math.firebasestorage.app",
+  messagingSenderId: "677457521800",
+  appId: "1:677457521800:web:899cfdb3de7dce526a833d"
+ };
+ const profiles = {
+  cloe:{uid:"gu5hECfhOPbXCCM767IzH12IbmI2",email:"zemaree+cloe@gmail.com",label:"Cloe"},
+  parent:{uid:"GWk7HNdn8FTIXKyU4OUiBNqStaD2",email:"zemaree@gmail.com",label:"Genitore"},
+  teacher:{uid:"p4QJoQ0zRANRcdMixjDftb59PgL2",email:"zemaree+docente@gmail.com",label:"Docente"}
+ };
+ const login=$("cloudLogin"), toolbar=$("cloudToolbar"), error=$("cloudLoginError");
+ let auth,db,user=null,role=null,mode="real",realProgress=null,saveChain=Promise.resolve();
+ const blank=()=>({days:{},mistakes:{},points:0,answers:[],history:[],programStart:new Date().toLocaleDateString("sv-SE")});
+ const clone=x=>JSON.parse(JSON.stringify(x));
+ const normalize=x=>{const d=x&&typeof x==="object"?x:blank();d.days??={};d.mistakes??={};d.points??=0;d.answers??=[];d.history??=[];d.programStart??=new Date().toLocaleDateString("sv-SE");return d};
+ const realRef=()=>db.collection("students").doc("cloe");
+ const practiceRef=uid=>db.collection("practice").doc(uid);
+ function showError(message){error.textContent=message}
+ function refresh(){renderStats();renderHistory();renderCalendar();if(mode==="practice"||role==="cloe")renderStats()}
+ function setParentView(on){document.body.classList.toggle("cloud-parent",on);$("layout").style.display=on?"none":"";$("summary").classList.add("hidden");$("dashboard").classList.remove("hidden");}
+ function setToolbar(){
+  toolbar.style.display="flex";
+  $("cloudMode").textContent=role==="cloe"?"Profilo Cloe":(role==="parent"?"Genitore":"Docente")+" · "+(mode==="real"?"consultazione":"modalità Prova");
+  $("cloudRealMode").style.display=role==="cloe"?"none":"inline-block";
+  $("cloudPracticeMode").style.display=role==="cloe"?"none":"inline-block";
+  $("cloudRealMode").disabled=mode==="real";
+  $("cloudPracticeMode").disabled=mode==="practice";
+ }
+ async function loadReal(){
+  const snap=await realRef().get();
+  if(snap.exists){realProgress=normalize(snap.data().progress);data=clone(realProgress)}
+  else {realProgress=blank();data=clone(realProgress)}
+  mode="real";setParentView(role!=="cloe");setToolbar();refresh();
+  if(role==="cloe")makeSession();
+ }
+ async function loadPractice(){
+  const ref=practiceRef(user.uid),snap=await ref.get();
+  if(snap.exists)data=normalize(snap.data().progress);
+  else {
+   const cached=localStorage.getItem("cloeMath_practice_"+user.uid);
+   data=normalize(cached?JSON.parse(cached):blank());
+  }
+  mode="practice";setParentView(false);setToolbar();refresh();makeSession();
+ }
+ async function afterLogin(firebaseUser,selectedRole){
+  user=firebaseUser;role=selectedRole;
+  const expected=profiles[role];
+  if(!expected||user.uid!==expected.uid){await auth.signOut();throw new Error("Questo account non corrisponde al profilo selezionato.");}
+  login.style.display="none";
+  toolbar.style.display=role==="cloe"?"none":"flex";
+  if(role==="cloe"){
+   const local=localStorage.getItem("cloeMath");
+   if(local&&!localStorage.getItem("cloeMath_backup_before_cloud"))localStorage.setItem("cloeMath_backup_before_cloud",local);
+  }
+  await loadReal();
+ }
+ async function signIn(e){
+  e.preventDefault();showError("");
+  const selected=$("cloudProfile").value,password=$("cloudPassword").value,profile=profiles[selected];
+  $("cloudLoginButton").disabled=true;$("cloudLoginButton").textContent="Accesso…";
+  try{
+   const credential=await auth.signInWithEmailAndPassword(profile.email,password);
+   await afterLogin(credential.user,selected);
+   $("cloudPassword").value="";
+  }catch(err){
+   showError(err.message.includes("corrisponde")?err.message:"Accesso non riuscito. Controlla profilo e password.");
+   if(auth.currentUser)await auth.signOut().catch(()=>{});
+  }finally{$("cloudLoginButton").disabled=false;$("cloudLoginButton").textContent="Accedi";}
+ }
+ function persist(){
+  if(!user)return;
+  const snapshot=clone(data);
+  if(role==="cloe"&&mode==="real"){
+   localStorage.setItem("cloeMath",JSON.stringify(snapshot));
+   saveChain=saveChain.then(()=>realRef().set({progress:snapshot,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(e=>console.error("Cloud sync failed",e));
+  }else if(mode==="practice"&&(role==="parent"||role==="teacher")){
+   localStorage.setItem("cloeMath_practice_"+user.uid,JSON.stringify(snapshot));
+   saveChain=saveChain.then(()=>practiceRef(user.uid).set({progress:snapshot,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(e=>console.error("Practice sync failed",e));
+  }
+ }
+ // Override the original local-only save function, preserving local backup and cloud sync.
+ save=function(){persist();renderStats();renderCalendar();};
+ $("cloudLoginForm").addEventListener("submit",signIn);
+ $("cloudRealMode").addEventListener("click",async()=>{try{await loadReal()}catch(e){alert("Non riesco a leggere i progressi online. Verifica le regole Firestore.");}});
+ $("cloudPracticeMode").addEventListener("click",async()=>{try{await loadPractice()}catch(e){alert("Non riesco ad aprire la modalità Prova. Verifica le regole Firestore.");}});
+ $("cloudLogout").addEventListener("click",async()=>{await auth.signOut();location.reload()});
+ $("adminOpen").style.display="none";
+ try{
+  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+  auth=firebase.auth();db=firebase.firestore();
+  auth.onAuthStateChanged(async current=>{
+   if(!current)return;
+   const found=Object.entries(profiles).find(([,p])=>p.uid===current.uid);
+   if(!found){await auth.signOut();return;}
+   try{await afterLogin(current,found[0]);}
+   catch(e){showError("Impossibile caricare il profilo. "+e.message);login.style.display="flex";}
+  });
+ }catch(e){showError("Servizio di accesso non disponibile. Controlla la connessione.");}
+})();
+</script>
+
+</body></html>
