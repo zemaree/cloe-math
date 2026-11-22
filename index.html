@@ -16,19 +16,19 @@ button:disabled{opacity:.55;cursor:default}
 @media(orientation:landscape) and (max-height:520px){header{margin-bottom:4px}.app{padding-top:8px}.panel{margin-top:8px}.question{font-size:42px;margin:5px 0}.interaction-dock .voice{padding:8px;font-size:16px}.interaction-dock .actions button{padding:9px 12px}}
 @media(min-width:650px){.layout{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.layout .panel{margin-top:18px}}
 </style></head><body><main class="app">
-<header><div><div class="brand">Cloe Math</div><div class="small muted" id="appVersion">Versione 1.1.0</div></div><div style="display:flex;align-items:center;gap:8px"><button class="secondary small" id="adminOpen" type="button" style="padding:9px 12px">⚙ Admin</button><div class="pill" id="level">Livello 1 · Inizio</div></div></header>
+<header><div><div class="brand">Cloe Math</div><div class="small muted" id="appVersion">Versione 1.1.1</div></div><div style="display:flex;align-items:center;gap:8px"><button class="secondary small" id="adminOpen" type="button" style="padding:9px 12px">⚙ Admin</button><div class="pill" id="level">Livello 1 · Inizio</div></div></header>
 <section class="panel"><h2 style="margin:0 0 6px">Ciao Cloe!</h2><p class="muted" style="margin:0 0 18px">Piccoli allenamenti, grandi progressi. Oggi puntiamo alla precisione.</p>
 <div class="stats"><div class="stat"><strong id="points">0</strong><span>stelle</span></div><div class="stat"><strong id="accuracy">—</strong><span>precisione oggi</span></div><div class="stat"><strong id="streak">0</strong><span>di fila</span></div></div></section>
 <div class="layout"><section class="panel"><div style="display:flex;justify-content:space-between;align-items:center"><strong id="round">Allenamento · 1 di 10</strong><span class="pill" id="clock">00:00</span></div><div class="progress" style="margin-top:12px"><div id="bar"></div></div>
 <div class="question" id="question">7 × 8</div>
 <div class="interaction-dock">
   <div class="answer"><input id="answer" inputmode="text" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="?" aria-label="Risposta"><button class="primary" id="send">Invia</button></div>
-  <button class="secondary voice" id="speak">🎙️ Dettatura</button><div class="feedback" id="feedback" aria-live="polite"></div>
-  <div class="actions"><button class="secondary" id="skip">Non lo so</button><button class="secondary" id="next" disabled>Prossima</button></div><p class="muted small" id="voiceStatus" style="text-align:center;margin-bottom:0">Scrivi la risposta oppure dettala con il microfono della tastiera.</p>
+  <button class="secondary voice" id="speak">🎙️ Rispondi a voce</button><div class="feedback" id="feedback" aria-live="polite"></div>
+  <div class="actions"><button class="secondary" id="skip">Non lo so</button><button class="secondary" id="next" disabled>Prossima</button></div><p class="muted small" id="voiceStatus" style="text-align:center;margin-bottom:0">Premi Rispondi a voce; se non funziona, usa il microfono della tastiera.</p>
 </div>
 </section><section class="panel"><h3 style="margin-top:0">Il tuo percorso</h3><p class="muted small">Le operazioni sbagliate tornano più spesso, così diventano familiari.</p><div class="stats"><div class="stat"><strong id="done">0/10</strong><span>risposte</span></div><div class="stat"><strong id="best">—</strong><span>tempo medio</span></div><div class="stat"><strong id="days">1</strong><span>giorno</span></div></div><h3>Ultime risposte</h3><div id="history" class="history muted small">Qui vedrai i tuoi progressi.</div></section></div>
 <div class="panel hidden" id="summary"><h2>Allenamento completato!</h2><p id="summaryText"></p><button class="primary" id="again">Fai un altro giro</button></div>
-<div class="footer">Versione 1.1.0 · I progressi sono salvati su questo dispositivo. Nessun account necessario.</div>
+<div class="footer">Versione 1.1.1 · I progressi sono salvati su questo dispositivo. Nessun account necessario.</div>
 <div class="admin-backdrop hidden" id="adminPanel" role="dialog" aria-modal="true" aria-labelledby="adminTitle"><section class="admin-card"><button class="admin-close secondary" id="adminClose" type="button" aria-label="Chiudi">✕</button><h2 id="adminTitle">Amministrazione</h2><p class="muted small">Area riservata al genitore.</p><div id="adminLogin"><label for="adminPassword"><strong>Password</strong></label><input id="adminPassword" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Inserisci password"><p class="admin-error" id="adminError" aria-live="polite"></p><button class="primary" id="adminUnlock" type="button">Accedi</button></div><div id="adminTools" class="hidden"><p>Puoi cancellare i progressi e lo storico dei test salvati su questo dispositivo.</p><button class="danger" id="resetData" type="button">Reset database</button><p class="muted small">Il reset non modifica il codice, le impostazioni del browser o i dati di altri dispositivi.</p></div></section></div>
 </main><script>
 const $=id=>document.getElementById(id), today=new Date().toLocaleDateString('sv-SE');
@@ -56,13 +56,86 @@ function parseItalianNumber(raw){
  for(const [word,value] of Object.entries(tens)){if(t.startsWith(word)){const tail=t.slice(word.length);if(tail in units)return value+units[tail];}}
  return null;
 }
-// Usa la dettatura nativa della tastiera Android/Samsung, già verificata sul dispositivo.
-$('voiceStatus').textContent='Premi Dettatura, poi il microfono sulla tastiera Samsung. Infine premi Invia.';
-$('speak').disabled=false;
-$('speak').onclick=()=>{
- if(answered)return;
- $('voiceStatus').textContent='Tocca il microfono sulla tastiera Samsung, pronuncia il numero e poi premi Invia.';
+// Prima prova il riconoscimento vocale integrato del browser; se non restituisce testo,
+// passa alla tastiera Android/Samsung come modalità alternativa.
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,voiceActive=false,voiceSession=0,voiceWatchdog=null;
+function useKeyboardDictation(message){
+ voiceActive=false;
+ clearTimeout(voiceWatchdog);
+ $('speak').disabled=false;
+ $('voiceStatus').textContent=message+' Puoi usare il microfono della tastiera.';
  $('answer').focus();
-};
-const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};renderStats();renderHistory();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=10',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
+}
+if(SR){
+ $('voiceStatus').textContent='Premi “Rispondi a voce” per parlare. Se il browser non capisce, potrai usare la tastiera.';
+ $('speak').disabled=false;
+ $('speak').onclick=()=>{
+  if(answered||voiceActive)return;
+  const session=++voiceSession;
+  voiceActive=true;
+  $('speak').disabled=true;
+  $('voiceStatus').textContent='Avvio del microfono…';
+  try{
+   rec=new SR();
+   const thisRec=rec;
+   thisRec.lang='it-IT';
+   thisRec.interimResults=false;
+   thisRec.maxAlternatives=1;
+   thisRec.onstart=()=>{
+    if(session!==voiceSession)return;
+    $('voiceStatus').textContent='Ti ascolto: parla adesso.';
+   };
+   thisRec.onresult=e=>{
+    if(session!==voiceSession)return;
+    const said=e.results?.[0]?.[0]?.transcript||'';
+    const value=parseItalianNumber(said);
+    if(value!==null){
+     $('answer').value=value;
+     voiceActive=false;
+     clearTimeout(voiceWatchdog);
+     $('speak').disabled=false;
+     $('voiceStatus').textContent='Ho capito: '+said;
+     submit(value);
+    }else{
+     $('answer').value=said;
+     useKeyboardDictation('Ho sentito «'+said+'», ma non riconosco il numero.');
+    }
+   };
+   thisRec.onnomatch=()=>{
+    if(session===voiceSession)useKeyboardDictation('Non ho riconosciuto la risposta.');
+   };
+   thisRec.onerror=e=>{
+    if(session!==voiceSession)return;
+    const messages={
+     'not-allowed':'Permesso microfono non disponibile.',
+     'service-not-allowed':'Servizio vocale non disponibile in questo browser.',
+     'no-speech':'Non ho sentito la risposta.',
+     'audio-capture':'Microfono non disponibile.',
+     'network':'Servizio vocale non raggiungibile.',
+     'aborted':'Ascolto interrotto.'
+    };
+    useKeyboardDictation(messages[e.error]||'Riconoscimento vocale non riuscito.');
+   };
+   thisRec.onend=()=>{
+    if(session!==voiceSession||!voiceActive||answered)return;
+    useKeyboardDictation('Ascolto terminato senza una risposta.');
+   };
+   thisRec.start();
+   voiceWatchdog=setTimeout(()=>{
+    if(session===voiceSession&&voiceActive){
+     try{thisRec.abort()}catch(e){}
+     useKeyboardDictation('Il riconoscimento vocale non risponde.');
+    }
+   },8000);
+  }catch(e){
+   useKeyboardDictation('Non riesco ad avviare il riconoscimento vocale.');
+  }
+ };
+}else{
+ $('speak').disabled=false;
+ $('voiceStatus').textContent='Riconoscimento vocale automatico non supportato: puoi usare la dettatura della tastiera.';
+ $('speak').onclick=()=>{if(!answered)$('answer').focus()};
+}
+const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};renderStats();renderHistory();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=11',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
 </script></body></html>
