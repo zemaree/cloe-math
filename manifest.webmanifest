@@ -1,0 +1,11 @@
+{
+  "name": "Cloe Math",
+  "short_name": "Cloe Math",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f3fb",
+  "theme_color": "#6654d9",
+  "description": "Allenamento quotidiano di moltiplicazioni e divisioni"
+}
