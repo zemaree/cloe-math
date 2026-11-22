@@ -16,7 +16,7 @@ button:disabled{opacity:.55;cursor:default}
 @media(orientation:landscape) and (max-height:520px){header{margin-bottom:4px}.app{padding-top:8px}.panel{margin-top:8px}.question{font-size:42px;margin:5px 0}.interaction-dock .voice{padding:8px;font-size:16px}.interaction-dock .actions button{padding:9px 12px}}
 @media(min-width:650px){.layout{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}.layout .panel{margin-top:18px}}
 </style></head><body><main class="app">
-<header><div><div class="brand">Cloe Math</div><div class="small muted" id="appVersion">Versione 1.0.7</div></div><div style="display:flex;align-items:center;gap:8px"><button class="secondary small" id="adminOpen" type="button" style="padding:9px 12px">⚙ Admin</button><div class="pill" id="level">Livello 1 · Inizio</div></div></header>
+<header><div><div class="brand">Cloe Math</div><div class="small muted" id="appVersion">Versione 1.0.8</div></div><div style="display:flex;align-items:center;gap:8px"><button class="secondary small" id="adminOpen" type="button" style="padding:9px 12px">⚙ Admin</button><div class="pill" id="level">Livello 1 · Inizio</div></div></header>
 <section class="panel"><h2 style="margin:0 0 6px">Ciao Cloe!</h2><p class="muted" style="margin:0 0 18px">Piccoli allenamenti, grandi progressi. Oggi puntiamo alla precisione.</p>
 <div class="stats"><div class="stat"><strong id="points">0</strong><span>stelle</span></div><div class="stat"><strong id="accuracy">—</strong><span>precisione oggi</span></div><div class="stat"><strong id="streak">0</strong><span>di fila</span></div></div></section>
 <div class="layout"><section class="panel"><div style="display:flex;justify-content:space-between;align-items:center"><strong id="round">Allenamento · 1 di 10</strong><span class="pill" id="clock">00:00</span></div><div class="progress" style="margin-top:12px"><div id="bar"></div></div>
@@ -28,7 +28,7 @@ button:disabled{opacity:.55;cursor:default}
 </div>
 </section><section class="panel"><h3 style="margin-top:0">Il tuo percorso</h3><p class="muted small">Le operazioni sbagliate tornano più spesso, così diventano familiari.</p><div class="stats"><div class="stat"><strong id="done">0/10</strong><span>risposte</span></div><div class="stat"><strong id="best">—</strong><span>tempo medio</span></div><div class="stat"><strong id="days">1</strong><span>giorno</span></div></div><h3>Ultime risposte</h3><div id="history" class="history muted small">Qui vedrai i tuoi progressi.</div></section></div>
 <div class="panel hidden" id="summary"><h2>Allenamento completato!</h2><p id="summaryText"></p><button class="primary" id="again">Fai un altro giro</button></div>
-<div class="footer">Versione 1.0.7 · I progressi sono salvati su questo dispositivo. Nessun account necessario.</div>
+<div class="footer">Versione 1.0.8 · I progressi sono salvati su questo dispositivo. Nessun account necessario.</div>
 <div class="admin-backdrop hidden" id="adminPanel" role="dialog" aria-modal="true" aria-labelledby="adminTitle"><section class="admin-card"><button class="admin-close secondary" id="adminClose" type="button" aria-label="Chiudi">✕</button><h2 id="adminTitle">Amministrazione</h2><p class="muted small">Area riservata al genitore.</p><div id="adminLogin"><label for="adminPassword"><strong>Password</strong></label><input id="adminPassword" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Inserisci password"><p class="admin-error" id="adminError" aria-live="polite"></p><button class="primary" id="adminUnlock" type="button">Accedi</button></div><div id="adminTools" class="hidden"><p>Puoi cancellare i progressi e lo storico dei test salvati su questo dispositivo.</p><button class="danger" id="resetData" type="button">Reset database</button><p class="muted small">Il reset non modifica il codice, le impostazioni del browser o i dati di altri dispositivi.</p></div></section></div>
 </main><script>
 const $=id=>document.getElementById(id), today=new Date().toLocaleDateString('sv-SE');
@@ -56,41 +56,80 @@ function parseItalianNumber(raw){
  for(const [word,value] of Object.entries(tens)){if(t.startsWith(word)){const tail=t.slice(word.length);if(tail in units)return value+units[tail];}}
  return null;
 }
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,voiceActive=false,voiceGotResult=false;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,voiceActive=false,voiceSession=0,voiceStartTimer=null,voiceReleaseTimer=null,voiceGotResult=false,voiceError='';
 if(SR){
  $('voiceStatus').textContent='Microfono pronto. Premi “Rispondi a voce” per ogni conto.';
  $('speak').disabled=false;
  $('speak').onclick=()=>{
-  if(voiceActive)return;
+  if(voiceActive||$('speak').disabled||answered)return;
+  const session=++voiceSession;
+  voiceActive=true;voiceGotResult=false;voiceError='';
+  clearTimeout(voiceStartTimer);clearTimeout(voiceReleaseTimer);
+  $('speak').disabled=true;
+  $('voiceStatus').textContent='Richiesta di accesso al microfono…';
   try{
-   rec=new SR();voiceActive=true;voiceGotResult=false;
-   rec.lang='it-IT';rec.interimResults=false;rec.maxAlternatives=1;
-   $('speak').disabled=true;
-   $('voiceStatus').textContent='Avvio del microfono…';
-   rec.onstart=()=>{$('voiceStatus').textContent='Ti ascolto: parla adesso.'};
-   rec.onresult=e=>{
+   rec=new SR();
+   const thisRec=rec;
+   thisRec.lang='it-IT';thisRec.interimResults=false;thisRec.maxAlternatives=1;
+   thisRec.onstart=()=>{
+    if(session!==voiceSession)return;
+    clearTimeout(voiceStartTimer);
+    $('voiceStatus').textContent='Ti ascolto: parla adesso.';
+   };
+   thisRec.onresult=e=>{
+    if(session!==voiceSession)return;
     voiceGotResult=true;
     const said=e.results[0][0].transcript;
     const value=parseItalianNumber(said);
     if(value!==null){$('voiceStatus').textContent='Ho capito: '+said;$('answer').value=value;submit(value)}
     else $('voiceStatus').textContent='Ho sentito «'+said+'», ma non riconosco un numero. Premi di nuovo per riprovare.';
    };
-   rec.onerror=e=>{
-    const messages={ 'not-allowed':'Permesso microfono negato. Controlla i permessi di Chrome.', 'no-speech':'Non ho sentito la risposta. Premi di nuovo e parla.', 'audio-capture':'Microfono non disponibile.' };
-    $('voiceStatus').textContent=messages[e.error]||'Errore del microfono. Premi di nuovo per riprovare.';
+   thisRec.onerror=e=>{
+    if(session!==voiceSession)return;
+    const messages={
+     'not-allowed':'Permesso microfono negato. Controlla i permessi di Chrome.',
+     'service-not-allowed':'Il servizio di riconoscimento vocale è stato bloccato dal browser.',
+     'no-speech':'Non ho sentito la risposta. Avvicinati e parla dopo l’avvio.',
+     'audio-capture':'Microfono non disponibile.',
+     'network':'Servizio vocale non raggiungibile. Controlla la connessione.',
+     'aborted':'Ascolto interrotto. Premi di nuovo per riprovare.'
+    };
+    voiceError=messages[e.error]||('Errore del microfono ('+e.error+'). Premi di nuovo per riprovare.');
+    $('voiceStatus').textContent=voiceError;
    };
-   rec.onend=()=>{
-    voiceActive=false;$('speak').disabled=false;
+   thisRec.onend=()=>{
+    if(session!==voiceSession)return;
+    clearTimeout(voiceStartTimer);
+    voiceActive=false;
     if(answered)$('voiceStatus').textContent='Risposta acquisita. Per il prossimo conto premi “Rispondi a voce”.';
+    else if(voiceError)$('voiceStatus').textContent=voiceError;
     else if(voiceGotResult)$('voiceStatus').textContent='Risposta non riconosciuta. Premi “Rispondi a voce” per riprovare.';
-    else if($('voiceStatus').textContent==='Avvio del microfono…')$('voiceStatus').textContent='Microfono non avviato. Premi di nuovo per riprovare.';
+    else $('voiceStatus').textContent='Ascolto terminato senza risposta. Premi di nuovo per riprovare.';
+    // Su Chrome Android il servizio può impiegare un istante a liberare il microfono.
+    // Il pulsante resta disabilitato durante questo breve intervallo.
+    voiceReleaseTimer=setTimeout(()=>{
+     if(session===voiceSession&&!voiceActive&&!answered)$('speak').disabled=false;
+    },900);
    };
-   rec.start();
-  }catch(e){voiceActive=false;$('speak').disabled=false;$('voiceStatus').textContent='Non riesco ad avviare il microfono. Premi di nuovo per riprovare.'}
+   thisRec.start();
+   voiceStartTimer=setTimeout(()=>{
+    if(session===voiceSession&&voiceActive){
+     voiceError='Chrome non ha avviato il microfono. Attendi un momento e riprova.';
+     $('voiceStatus').textContent=voiceError;
+     try{thisRec.abort()}catch(e){}
+    }
+   },6000);
+  }catch(e){
+   clearTimeout(voiceStartTimer);
+   voiceActive=false;
+   $('voiceStatus').textContent='Non riesco ad avviare il microfono. Attendi un momento e riprova.';
+   voiceReleaseTimer=setTimeout(()=>{if(session===voiceSession&&!answered)$('speak').disabled=false},900);
+  }
  };
 }else{
  $('speak').disabled=true;
  $('voiceStatus').textContent='Riconoscimento vocale non supportato da questo browser: usa la tastiera.';
 }
-const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};renderStats();renderHistory();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=7',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
+const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};renderStats();renderHistory();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=8',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
 </script></body></html>
