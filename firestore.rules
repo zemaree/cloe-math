@@ -1,0 +1,47 @@
+// rules-status: NOT YET APPLIED as of 2026-11-22
+// applied in the Firebase Console (project cloe-math): only the Cloe uid can write /students/cloe,
+//   so the admin reset from the parent profile fails with code "permission-denied".
+// this file = TARGET rules: the parent uid is added to allow create,update on /students/cloe.
+// mirror only: nothing in the app reads it, do NOT add it to sw.js FILES, and there is no firebase.json
+//   or service account here, so applying it is a manual save in Console > Firestore > Rules.
+// when you apply it, update the rules-status line above and say so in the push message (Rules: applied ...).
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Progressi reali di Cloe
+    match /students/cloe {
+      allow read: if request.auth != null
+        && request.auth.uid in [
+          'gu5hECfhOPbXCCM767IzH12IbmI2',
+          'GWk7HNdn8FTIXKyU4OUiBNqStaD2',
+          'p4QJoQ0zRANRcdMixjDftb59PgL2'
+        ];
+
+      // Cloe writes her own doc; the parent writes it only for the admin reset panel
+      allow create, update: if request.auth != null
+        && request.auth.uid in [
+          'gu5hECfhOPbXCCM767IzH12IbmI2',
+          'GWk7HNdn8FTIXKyU4OUiBNqStaD2'
+        ];
+
+      allow delete: if false;
+    }
+
+    // Modalità Prova: every adult reads and writes only his own test doc
+    match /practice/{uid} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.uid in [
+          'GWk7HNdn8FTIXKyU4OUiBNqStaD2',
+          'p4QJoQ0zRANRcdMixjDftb59PgL2'
+        ];
+    }
+
+    // Everything else stays closed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
