@@ -74,8 +74,8 @@ body.cloud-parent #dashboard+section{display:block}
  <button class="secondary" id="cloudLogout" type="button">Esci</button>
 </div>
 
-<div class="footer">Versione 1.5.2 · I progressi sono salvati online nel profilo selezionato.</div>
-<div class="admin-backdrop hidden" id="adminPanel" role="dialog" aria-modal="true" aria-labelledby="adminTitle"><section class="admin-card"><button class="admin-close secondary" id="adminClose" type="button" aria-label="Chiudi">✕</button><h2 id="adminTitle">Amministrazione</h2><p class="muted small">Area riservata al genitore.</p><div id="adminLogin"><label for="adminPassword"><strong>Password</strong></label><input id="adminPassword" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Inserisci password"><p class="admin-error" id="adminError" aria-live="polite"></p><button class="primary" id="adminUnlock" type="button">Accedi</button></div><div id="adminTools" class="hidden"><p>Puoi cancellare i progressi e lo storico dei test salvati su questo dispositivo.</p><button class="danger" id="resetData" type="button">Reset database</button><p class="muted small">Il reset non modifica il codice, le impostazioni del browser o i dati di altri dispositivi.</p></div></section></div>
+<div class="footer">Versione 1.5.3 · I progressi sono salvati online nel profilo selezionato.</div>
+<div class="admin-backdrop hidden" id="adminPanel" role="dialog" aria-modal="true" aria-labelledby="adminTitle"><section class="admin-card"><button class="admin-close secondary" id="adminClose" type="button" aria-label="Chiudi">✕</button><h2 id="adminTitle">Amministrazione</h2><p class="muted small">Area riservata al genitore.</p><div id="adminTools"><p>Questa operazione azzera i progressi e lo storico di Cloe salvati online. Non elimina account, profili o dati della Modalità Prova.</p><button class="danger" id="resetData" type="button">Azzera progressi di Cloe</button><p class="muted small">L’operazione non è reversibile.</p></div></section></div>
 </main><script>
 const $=id=>document.getElementById(id), today=new Date().toLocaleDateString('sv-SE');
 let data={days:{},mistakes:{},points:0,answers:[],history:[],programStart:today};data.days[today]={correct:0,total:0,seconds:[]};
@@ -225,6 +225,7 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
   $("cloudPracticeMode").style.display=role==="cloe"?"none":"inline-block";
   $("cloudRealMode").disabled=mode==="real";
   $("cloudPracticeMode").disabled=mode==="practice";
+  $("adminOpen").style.display=role==="parent"&&mode==="real"?"inline-block":"none";
  }
  async function loadReal(){
   const snap=await realRef().get();
@@ -279,6 +280,22 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
  $("cloudPracticeMode").addEventListener("click",async()=>{try{await loadPractice()}catch(e){alert("Non riesco ad aprire la modalità Prova. Verifica le regole Firestore.");}});
  $("cloudLogout").addEventListener("click",async()=>{await auth.signOut();location.reload()});
  $("adminOpen").style.display="none";
+ $("adminOpen").addEventListener("click",()=>$("adminPanel").classList.remove("hidden"));
+ $("adminClose").addEventListener("click",()=>$("adminPanel").classList.add("hidden"));
+ $("adminPanel").addEventListener("click",e=>{if(e.target===$("adminPanel"))$("adminPanel").classList.add("hidden")});
+ $("resetData").addEventListener("click",async()=>{
+  if(role!=="parent"||mode!=="real"){alert("Il reset è disponibile solo al genitore nella consultazione dei progressi di Cloe.");return;}
+  if(!confirm("ATTENZIONE: vuoi davvero azzerare tutti i progressi e lo storico di Cloe? L’operazione non è reversibile."))return;
+  const button=$("resetData");button.disabled=true;button.textContent="Azzeramento…";
+  try{
+   await saveChain;
+   const reset=normalize(blank());
+   await realRef().set({progress:reset,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),initializedOnline:true},{merge:true});
+   realProgress=clone(reset);data=clone(reset);refresh();setParentView(true);setToolbar();$("adminPanel").classList.add("hidden");
+   alert("Progressi di Cloe azzerati correttamente.");
+  }catch(e){console.error("Cloud reset failed",e);alert("Non è stato possibile azzerare i progressi online. Nessun reset confermato.");}
+  finally{button.disabled=false;button.textContent="Azzera progressi di Cloe";}
+ });
  try{
   if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
   auth=firebase.auth();db=firebase.firestore();
