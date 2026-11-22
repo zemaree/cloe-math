@@ -34,8 +34,8 @@ function renderHistory(){$('history').innerHTML=(data.history||[]).slice(0,8).ma
 function finish(){clearInterval(timer);$('question').textContent='★';$('feedback').textContent='Bravissima, giro finito!';$('answer').classList.add('hidden');$('send').classList.add('hidden');$('speak').classList.add('hidden');$('skip').classList.add('hidden');$('next').classList.add('hidden');$('summary').classList.remove('hidden');let d=data.days[today];$('summaryText').textContent='Oggi: '+d.correct+' risposte corrette su '+d.total+'. Le operazioni da ripassare torneranno nei prossimi allenamenti.';$('bar').style.width='100%'}
 $('send').onclick=()=>submit($('answer').value);$('answer').addEventListener('keydown',e=>{if(e.key==='Enter')submit($('answer').value)});$('next').onclick=()=>{index++;showQuestion()};$('skip').onclick=()=>submit(-999);$('again').onclick=()=>{['answer','send','speak','skip','next'].forEach(id=>$(id).classList.remove('hidden'));makeSession()};
 function parseItalianNumber(raw){
- const t=raw.toLocaleLowerCase('it-IT').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().replace(/[.,!?]/g,'').replace(/\\s+/g,' ');
- if(/^\\d{1,3}$/.test(t)) return Number(t);
+ const t=raw.toLocaleLowerCase('it-IT').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/[.,!?]/g,'').replace(/\s+/g,' ');
+ if(/^\d{1,3}$/.test(t)) return Number(t);
  const units={zero:0,uno:1,una:1,due:2,tre:3,quattro:4,cinque:5,sei:6,sette:7,otto:8,nove:9};
  const exact={dieci:10,undici:11,dodici:12,tredici:13,quattordici:14,quindici:15,sedici:16,diciassette:17,diciotto:18,diciannove:19,venti:20};
  if(t in units)return units[t]; if(t in exact)return exact[t];
