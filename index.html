@@ -74,11 +74,11 @@ body.cloud-parent #dashboard+section{display:block}
  <button class="secondary" id="cloudLogout" type="button">Esci</button>
 </div>
 
-<div class="footer">Versione 1.5.1 · I progressi sono salvati su questo dispositivo. Nessun account necessario.</div>
+<div class="footer">Versione 1.5.2 · I progressi sono salvati online nel profilo selezionato.</div>
 <div class="admin-backdrop hidden" id="adminPanel" role="dialog" aria-modal="true" aria-labelledby="adminTitle"><section class="admin-card"><button class="admin-close secondary" id="adminClose" type="button" aria-label="Chiudi">✕</button><h2 id="adminTitle">Amministrazione</h2><p class="muted small">Area riservata al genitore.</p><div id="adminLogin"><label for="adminPassword"><strong>Password</strong></label><input id="adminPassword" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Inserisci password"><p class="admin-error" id="adminError" aria-live="polite"></p><button class="primary" id="adminUnlock" type="button">Accedi</button></div><div id="adminTools" class="hidden"><p>Puoi cancellare i progressi e lo storico dei test salvati su questo dispositivo.</p><button class="danger" id="resetData" type="button">Reset database</button><p class="muted small">Il reset non modifica il codice, le impostazioni del browser o i dati di altri dispositivi.</p></div></section></div>
 </main><script>
 const $=id=>document.getElementById(id), today=new Date().toLocaleDateString('sv-SE');
-let data=JSON.parse(localStorage.getItem('cloeMath')||'{}');data.days??={};data.mistakes??={};data.points??=0;data.answers??=[];data.programStart??=today;data.days[today]??={correct:0,total:0,seconds:[]};
+let data={days:{},mistakes:{},points:0,answers:[],history:[],programStart:today};data.days[today]={correct:0,total:0,seconds:[]};
 let session=[],sessionPool=[],index=0,current=null,started=0,elapsed=0,answered=false,streak=0,timer=null,sessionTimer=null,sessionActive=false,sessionDeadline=0,sessionInitialTotal=0;let calendarMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
 function currentLevel(){let days=Object.values(data.days),total=days.reduce((n,d)=>n+(d.total||0),0),correct=days.reduce((n,d)=>n+(d.correct||0),0),accuracy=total?correct/total:0;if(total>=100&&accuracy>=.85)return 3;if(total>=40&&accuracy>=.75)return 2;return 1}const levelNames=['Consolidamento','Allenamento misto','Automatismi'];const levelDescriptions=['Calcoli da 1 a 10, con ritmo tranquillo e attenzione alla correttezza.','Stessi numeri da 1 a 10, con moltiplicazioni e divisioni più mescolate e ripasso mirato degli errori.','Stesso programma da 1 a 10, con maggiore frequenza degli esercizi da automatizzare.'];function programDay(){const start=new Date(data.programStart+'T00:00:00'),now=new Date(today+'T00:00:00');return Math.max(1,Math.min(15,Math.floor((now-start)/86400000)+1))}function buildPool(){let items=[];for(let a=1;a<=10;a++)for(let b=1;b<=10;b++){items.push({a,b,op:'×',answer:a*b,key:a+'x'+b});items.push({a:a*b,b,op:'÷',answer:a,key:(a*b)+'d'+b})}return items}
 function save(){localStorage.setItem('cloeMath',JSON.stringify(data));renderStats();renderCalendar()}
@@ -188,7 +188,7 @@ if(SR){
  $('voiceStatus').textContent='Riconoscimento vocale automatico non supportato: puoi usare la dettatura della tastiera.';
  $('speak').onclick=()=>{if(!answered)$('answer').focus()};
 }
-const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};$('prevMonth').onclick=()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar()};$('nextMonth').onclick=()=>{let n=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1),now=new Date();if(n<=new Date(now.getFullYear(),now.getMonth(),1)){calendarMonth=n;renderCalendar()}};renderStats();renderHistory();renderCalendar();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=18',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
+const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classList.remove('hidden');$('adminPassword').value='';$('adminError').textContent='';$('adminLogin').classList.remove('hidden');$('adminTools').classList.add('hidden');$('adminPassword').focus()};$('adminClose').onclick=()=>adminPanel.classList.add('hidden');adminPanel.addEventListener('click',e=>{if(e.target===adminPanel)adminPanel.classList.add('hidden')});function unlockAdmin(){if($('adminPassword').value==='300574'){$('adminLogin').classList.add('hidden');$('adminTools').classList.remove('hidden');$('adminError').textContent=''}else{$('adminError').textContent='Password non corretta.';$('adminPassword').select()}}$('adminUnlock').onclick=unlockAdmin;$('adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')unlockAdmin()});$('resetData').onclick=()=>{if(!confirm('Confermi il reset? Verranno cancellati stelle, statistiche, errori e storico di Cloe Math su questo dispositivo.'))return;localStorage.removeItem('cloeMath');location.reload()};$('prevMonth').onclick=()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar()};$('nextMonth').onclick=()=>{let n=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1),now=new Date();if(n<=new Date(now.getFullYear(),now.getMonth(),1)){calendarMonth=n;renderCalendar()}};renderStats();renderHistory();renderCalendar();makeSession();if('serviceWorker'in navigator)window.addEventListener('load',()=>{let refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!refreshing){refreshing=true;location.reload()}});navigator.serviceWorker.register('./sw.js?v=19',{updateViaCache:'none'}).then(reg=>reg.update().catch(()=>{})).catch(()=>{});});
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -229,23 +229,16 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
  async function loadReal(){
   const snap=await realRef().get();
   if(snap.exists){realProgress=normalize(snap.data().progress);data=clone(realProgress)}
-  else if(role==="cloe"){
-   // First login: import the existing local progress exactly once, keeping its backup.
-   const saved=localStorage.getItem("cloeMath");
-   data=normalize(saved?JSON.parse(saved):blank());
-   realProgress=clone(data);
-   await realRef().set({progress:realProgress,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),migratedFromLocal:true});
-  }else {realProgress=blank();data=clone(realProgress)}
+  else {
+   data=normalize(blank());realProgress=clone(data);
+   if(role==="cloe")await realRef().set({progress:realProgress,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),initializedOnline:true});
+  }
   mode="real";setParentView(role!=="cloe");setToolbar();refresh();
   if(role==="cloe")makeSession();
  }
  async function loadPractice(){
   const ref=practiceRef(user.uid),snap=await ref.get();
-  if(snap.exists)data=normalize(snap.data().progress);
-  else {
-   const cached=localStorage.getItem("cloeMath_practice_"+user.uid);
-   data=normalize(cached?JSON.parse(cached):blank());
-  }
+  data=snap.exists?normalize(snap.data().progress):normalize(blank());
   mode="practice";setParentView(false);setToolbar();refresh();makeSession();
  }
  async function afterLogin(firebaseUser,selectedRole){
@@ -255,10 +248,6 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
   if(!expected||user.uid!==expected.uid){await auth.signOut();throw new Error("Questo account non corrisponde al profilo selezionato.");}
   login.style.display="none";
   toolbar.style.display=role==="cloe"?"none":"flex";
-  if(role==="cloe"){
-   const local=localStorage.getItem("cloeMath");
-   if(local&&!localStorage.getItem("cloeMath_backup_before_cloud"))localStorage.setItem("cloeMath_backup_before_cloud",local);
-  }
   await loadReal();
  }
  async function signIn(e){
@@ -278,14 +267,12 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
   if(!user)return;
   const snapshot=clone(data);
   if(role==="cloe"&&mode==="real"){
-   localStorage.setItem("cloeMath",JSON.stringify(snapshot));
    saveChain=saveChain.then(()=>realRef().set({progress:snapshot,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(e=>console.error("Cloud sync failed",e));
   }else if(mode==="practice"&&(role==="parent"||role==="teacher")){
-   localStorage.setItem("cloeMath_practice_"+user.uid,JSON.stringify(snapshot));
    saveChain=saveChain.then(()=>practiceRef(user.uid).set({progress:snapshot,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})).catch(e=>console.error("Practice sync failed",e));
   }
  }
- // Override the original local-only save function, preserving local backup and cloud sync.
+ // Override the legacy save function: cloud-only persistence, no local progress storage.
  save=function(){persist();renderStats();renderCalendar();};
  $("cloudLoginForm").addEventListener("submit",signIn);
  $("cloudRealMode").addEventListener("click",async()=>{try{await loadReal()}catch(e){alert("Non riesco a leggere i progressi online. Verifica le regole Firestore.");}});
