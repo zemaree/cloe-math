@@ -1,10 +1,10 @@
-// rules-status: NOT YET APPLIED as of 2026-11-22
-// applied in the Firebase Console (project cloe-math): only the Cloe uid can write /students/cloe,
-//   so the admin reset from the parent profile fails with code "permission-denied".
-// this file = TARGET rules: the parent uid is added to allow create,update on /students/cloe.
+// rules-status: APPLIED as of 2026-11-22 (saved in the Firebase Console for project cloe-math)
+// applied rules = this file: the Cloe uid AND the parent uid can create/update /students/cloe,
+//   so the admin reset from the parent profile now succeeds instead of failing with "permission-denied".
+// the teacher uid can read /students/cloe but not write it; practice/<uid> stays self-matched per uid.
 // mirror only: nothing in the app reads it, do NOT add it to sw.js FILES, and there is no firebase.json
-//   or service account here, so applying it is a manual save in Console > Firestore > Rules.
-// when you apply it, update the rules-status line above and say so in the push message (Rules: applied ...).
+//   or service account here, so re-applying after an edit is a manual save in Console > Firestore > Rules.
+// when you change either side, update the rules-status line above and say so in the push message (Rules: applied ...).
 
 rules_version = '2';
 service cloud.firestore {
