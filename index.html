@@ -226,7 +226,13 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
  async function loadReal(){
   const snap=await realRef().get();
   if(snap.exists){realProgress=normalize(snap.data().progress);data=clone(realProgress)}
-  else {realProgress=blank();data=clone(realProgress)}
+  else if(role==="cloe"){
+   // First login: import the existing local progress exactly once, keeping its backup.
+   const saved=localStorage.getItem("cloeMath");
+   data=normalize(saved?JSON.parse(saved):blank());
+   realProgress=clone(data);
+   await realRef().set({progress:realProgress,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),migratedFromLocal:true});
+  }else {realProgress=blank();data=clone(realProgress)}
   mode="real";setParentView(role!=="cloe");setToolbar();refresh();
   if(role==="cloe")makeSession();
  }
@@ -240,6 +246,7 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
   mode="practice";setParentView(false);setToolbar();refresh();makeSession();
  }
  async function afterLogin(firebaseUser,selectedRole){
+  if(user&&user.uid===firebaseUser.uid&&role===selectedRole&&login.style.display==="none")return;
   user=firebaseUser;role=selectedRole;
   const expected=profiles[role];
   if(!expected||user.uid!==expected.uid){await auth.signOut();throw new Error("Questo account non corrisponde al profilo selezionato.");}
