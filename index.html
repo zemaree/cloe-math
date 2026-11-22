@@ -42,10 +42,10 @@ button:disabled{opacity:.55;cursor:default}
 #cloudToolbar{display:none;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 #cloudToolbar button{padding:9px 12px;font-size:13px}
 #cloudMode{font-size:12px;color:#5142b8;font-weight:800}
-body.cloud-parent #layout .panel:first-child,body.cloud-parent #summary{display:none!important}
+body.cloud-parent .layout .panel:first-child,body.cloud-parent #summary{display:none!important}
 body.cloud-parent #dashboard,body.cloud-parent #dashboard+section{display:block}
 body.cloud-parent #dashboard{margin-top:18px}
-body.cloud-parent #layout .panel:last-child{display:none!important}
+body.cloud-parent .layout .panel:last-child{display:none!important}
 body.cloud-parent #dashboard+section{display:block}
 </style>
 <div id="cloudLogin">
@@ -214,7 +214,7 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
  const practiceRef=uid=>db.collection("practice").doc(uid);
  function showError(message){error.textContent=message}
  function refresh(){renderStats();renderHistory();renderCalendar();if(mode==="practice"||role==="cloe")renderStats()}
- function setParentView(on){document.body.classList.toggle("cloud-parent",on);$("layout").style.display=on?"none":"";$("summary").classList.add("hidden");$("dashboard").classList.remove("hidden");}
+ function setParentView(on){document.body.classList.toggle("cloud-parent",on);const layout=document.querySelector(".layout");if(layout)layout.style.display=on?"none":"";$("summary").classList.add("hidden");$("dashboard").classList.remove("hidden");}
  function setToolbar(){
   toolbar.style.display="flex";
   $("cloudMode").textContent=role==="cloe"?"Profilo Cloe":(role==="parent"?"Genitore":"Docente")+" · "+(mode==="real"?"consultazione":"modalità Prova");
