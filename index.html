@@ -209,7 +209,7 @@ const adminPanel=$('adminPanel');$('adminOpen').onclick=()=>{adminPanel.classLis
  let auth,db,user=null,role=null,mode="real",realProgress=null,saveChain=Promise.resolve();
  const blank=()=>({days:{},mistakes:{},points:0,answers:[],history:[],programStart:new Date().toLocaleDateString("sv-SE")});
  const clone=x=>JSON.parse(JSON.stringify(x));
- const normalize=x=>{const d=x&&typeof x==="object"?x:blank();d.days??={};d.mistakes??={};d.points??=0;d.answers??=[];d.history??=[];d.programStart??=new Date().toLocaleDateString("sv-SE");return d};
+ const normalize=x=>{const d=x&&typeof x==="object"?x:blank();d.days??={};d.days[new Date().toLocaleDateString("sv-SE")]??={correct:0,total:0,seconds:[]};d.mistakes??={};d.points??=0;d.answers??=[];d.history??=[];d.programStart??=new Date().toLocaleDateString("sv-SE");return d};
  const realRef=()=>db.collection("students").doc("cloe");
  const practiceRef=uid=>db.collection("practice").doc(uid);
  function showError(message){error.textContent=message}
