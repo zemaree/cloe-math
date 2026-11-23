@@ -1,4 +1,4 @@
-const CACHE='cloe-math-v29';
+const CACHE='cloe-math-v30';
 const FILES=['./','./index.html','./manifest.webmanifest'];
 
 self.addEventListener('install',event=>{
